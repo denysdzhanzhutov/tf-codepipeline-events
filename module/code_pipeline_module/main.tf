@@ -118,7 +118,7 @@ resource "aws_iam_role_policy" "codepipeline_assume_role_policy" {
       {
         Effect   = "Allow",
         Action   = "codestar-connections:UseConnection",
-        Resource = "*" // Replace with the ARN of the CodeStar Connection's IAM role
+        Resource = "arn:aws:codestar-connections:us-east-1:201633445759:connection/2625c888-aefc-466f-a1fa-c03bd81a8392" // Replace with the ARN of the CodeStar Connection's IAM role
       }
     ]
   })

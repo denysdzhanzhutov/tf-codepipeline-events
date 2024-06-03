@@ -1,15 +1,66 @@
-resource "tls_private_key" "key" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
+resource "aws_vpc" "dev-vpc" {
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_hostnames = true
+
+  tags = {
+    Name = "dev-vpc"
+  }
 }
 
-resource "aws_key_pair" "ec2_key_pair" {
-  key_name   = "private-key"
-  public_key = tls_private_key.key.public_key_openssh
-  provisioner "local-exec" { # Create "myKey.pem" to your computer!!
-    command = "echo '${tls_private_key.key.private_key_pem}' > ./private-key.pem"
+resource "aws_subnet" "dev-public-subnet" {
+  vpc_id                  = aws_vpc.dev-vpc.id
+  cidr_block              = "10.0.0.0/24"
+  map_public_ip_on_launch = true
+  availability_zone       = "us-east-1a"
+
+  tags = {
+    Name = "dev-public-subnet"
   }
-  tags = var.tags
+}
+
+resource "aws_internet_gateway" "dev-igw" {
+  vpc_id = aws_vpc.dev-vpc.id
+
+  tags = {
+    Name = "dev-igw"
+  }
+}
+
+resource "aws_route_table" "dev-public-rt" {
+  vpc_id = aws_vpc.dev-vpc.id
+
+  tags = {
+    Name = "dev-public-rt"
+  }
+}
+resource "aws_route" "dev-default-route" {
+  route_table_id = aws_route_table.dev-public-rt.id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id = aws_internet_gateway.dev-igw.id
+}
+
+resource "aws_route_table_association" "dev-public-rt-to-dev-public-subnet-association" {
+  route_table_id = aws_route_table.dev-public-rt.id
+  subnet_id = aws_subnet.dev-public-subnet.id
+}
+
+resource "aws_security_group" "dev-sg" {
+  name = "dev-sg"
+  vpc_id = aws_vpc.dev-vpc.id
+
+  ingress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
 
 # Create the role for EC2 instance
@@ -47,40 +98,11 @@ resource "aws_instance" "ec2_instance" {
   instance_type          = var.instance_type
   user_data              = file("${path.module}/EC2_user_data.sh")
   iam_instance_profile   = aws_iam_instance_profile.EC2_instance_profile.name
-  vpc_security_group_ids = [aws_security_group.ec2_security_group.id]
-  key_name               = aws_key_pair.ec2_key_pair.key_name #
+  vpc_security_group_ids = [aws_security_group.dev-sg.id]
+  key_name               = data.aws_key_pair.key-pair.key_name
+  subnet_id              = aws_subnet.dev-public-subnet.id
   tags = merge(var.tags, {
     Name = var.instance_name
   })
-}
-# -- Assign Elastic IP to EC2 
-resource "aws_eip" "aws_instance_elastic_ip" {
-  domain   = "vpc"
-  instance = aws_instance.ec2_instance.id
-  tags     = var.tags
-}
-
-#EC2 security group
-resource "aws_security_group" "ec2_security_group" {
-  name        = "ec2-security-group"
-  description = "Security group attached with EC2"
-
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [var.ssh_allowed_ip]
-  }
-
-  dynamic "ingress" {
-    for_each = var.security_group_allowed_ports
-    content {
-      from_port   = ingress.value
-      to_port     = ingress.value
-      protocol    = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]
-    }
-  }
-  tags = var.tags
 }
 

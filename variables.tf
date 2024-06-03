@@ -9,10 +9,10 @@ variable "aws_region" {
 # ----------------------------------------------------------------
 
 
-variable "ssh_allowed_ip" {
-  type    = string
-  default = "72.255.40.255/32"
-}
+# variable "ssh_allowed_ip" {
+#   type    = string
+#   default = "0.0.0.0/0"
+# }
 
 
 
@@ -34,7 +34,7 @@ variable "environment" {
 
 variable "account_id" {
   type    = string
-  default = "553763232323"
+  default = "201633445759"
 }
 
 # ----------------------------------------------------------------
@@ -54,7 +54,7 @@ variable "parameter_store_name" {
 variable "FullRepositoryId" {
   type        = string
   description = "Repository used in code pipeline"
-  default     = "rafay-tariq/ProjectBackend"
+  default     = "denysdzhanzhutov/codepipeline"
 }
 
 variable "BranchName" {
@@ -66,11 +66,11 @@ variable "BranchName" {
 variable "s3BucketNameForArtifacts" {
   type        = string
   description = "S3 bucket to store the source code artifacts"
-  default     = "example-artifact-bucket-some-more-me-random-meeeee"
+  default     = "example-artifact-bucket-743gf783gf4379yf4389hf3"
 }
 
 variable "CodeStarConnectionArn" {
   type        = string
   description = "Existing connection of github/bitbucket with AWS Coestart"
-  default     = "arn:aws:codestar-connections:us-east-1:553723657971:connection/99b23235-d2be-482b-b00c-c449716f1cde"
+  default     = "arn:aws:codestar-connections:us-east-1:201633445759:connection/2625c888-aefc-466f-a1fa-c03bd81a8392"
 }
